@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#d3cec4" />
+    <title>Earth — Pop-up Poster</title>
+    <meta name="description" content="NASA SVS 〈The Geoid〉와 같은 중력장 모델(GOCO06s)로 만든 감자 모양 지구(지오이드 ×10,000)가 튀어나와 도는 미니멀 팝업 포스터" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  </head>
+  <body>
+    <canvas id="stage" aria-label="지오이드로 부풀린 감자 모양 지구가 도는 포스터"></canvas>
+    <nav class="controls">
+      <button id="mode" type="button"></button>
+    </nav>
+    <p id="announcer" class="visually-hidden" aria-live="polite"></p>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
