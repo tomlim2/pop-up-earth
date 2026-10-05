@@ -1,12 +1,11 @@
-// 감자 지구: 경위도 격자 구에 지오이드 높이 × 10,000 을 반지름으로 더한 모양.
-// 둥근 구와 감자 모양을 모프 타깃 두 벌로 만들어서 그 사이를 스프링으로 오감
+// 감자 지구: 경위도 격자 구의 각 점을 지오이드 높이 × 10,000 만큼 반지름 방향으로 밀어낸 모양
 
 import * as THREE from 'three';
 import { contours } from 'd3-contour';
 import { geoEquirectangular, geoGraticule, geoPath } from 'd3-geo';
 
 export const EXAGGERATION = 10_000;
-export const AXIAL_TILT = 23.4; // 자전축 기울기 (도). 3D 감자와 포스터에 인쇄된 축 선이 같이 씀
+export const AXIAL_TILT = 23.4; // 자전축 기울기 (도)
 const EARTH_RADIUS_M = 6_371_000;
 const LON_SEGMENTS = 256;
 const LAT_SEGMENTS = 128;
@@ -25,14 +24,13 @@ export function latLonOf(v) {
 }
 
 /** 높이(m) → 감자 반지름 (둥근 구 = 1) */
-export function radiusOf(height, amount = 1) {
-  return 1 + (height * EXAGGERATION * amount) / EARTH_RADIUS_M;
+export function radiusOf(height) {
+  return 1 + (height * EXAGGERATION) / EARTH_RADIUS_M;
 }
 
 export function potatoGeometry(geoid) {
   const columns = LON_SEGMENTS + 1;
   const count = columns * (LAT_SEGMENTS + 1);
-  const sphere = new Float32Array(count * 3);
   const potato = new Float32Array(count * 3);
   const uvs = new Float32Array(count * 2);
   const dir = new THREE.Vector3();
@@ -43,7 +41,6 @@ export function potatoGeometry(geoid) {
       const lon = -180 + (i * 360) / LON_SEGMENTS;
       const k = j * columns + i;
       direction(lat, lon, dir);
-      sphere.set([dir.x, dir.y, dir.z], k * 3);
       const r = radiusOf(geoid.sample(lat, lon));
       potato.set([dir.x * r, dir.y * r, dir.z * r], k * 3);
       uvs.set([i / LON_SEGMENTS, 1 - j / LAT_SEGMENTS], k * 2);
@@ -63,12 +60,9 @@ export function potatoGeometry(geoid) {
 
   const geometry = new THREE.BufferGeometry();
   geometry.setIndex(index);
-  geometry.setAttribute('position', new THREE.BufferAttribute(sphere, 3));
-  geometry.setAttribute('normal', new THREE.BufferAttribute(sphere.slice(), 3)); // 단위 구는 위치 = 법선
+  geometry.setAttribute('position', new THREE.BufferAttribute(potato, 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normalsOf(potato, columns), 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geometry.morphAttributes.position = [new THREE.BufferAttribute(potato, 3)];
-  geometry.morphAttributes.normal = [new THREE.BufferAttribute(normalsOf(potato, columns), 3)];
-  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1.25);
   return geometry;
 }
 

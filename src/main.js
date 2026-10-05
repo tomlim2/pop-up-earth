@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { countryAt, korean, loadEarth, loadGeoid, POSTER } from './geo.js';
+import { countryAt, loadEarth, loadGeoid, POSTER } from './geo.js';
 import { createInfoCanvas, drawInfo, drawPoster, INFO, OCEAN, SOCKET, ACCENT } from './poster.js';
 import { AXIAL_TILT, latLonOf, potatoGeometry, potatoTexture, radiusOf } from './potato.js';
 import './style.css';
@@ -12,7 +12,7 @@ const POP_OUT = 0.3; // 감자가 포스터에서 튀어나온 거리
 const AUTO_SPIN = 0.22; // 저절로 도는 빠르기 (rad/s)
 const MAX_FLING = 9; // 끌다 놓을 때 낼 수 있는 가장 빠른 자전 (rad/s)
 const PITCH = 0.12; // 처음 기울기. 위아래로 끌었다 놓으면 천천히 여기로 돌아옴
-const MORPH = { k: 120, c: 10 }; // 둥근 구 ↔ 감자 스프링 (감쇠비 ≈ 0.46, 부풀며 출렁)
+const AXIS = { length: 2.7, radius: 0.0035, color: '#2a2824' }; // 자전축 막대 (감자 로컬, 둥근 지구 반지름 = 1)
 
 const FRAME_MS = 1000 / 60; // 60fps 고정 스텝
 const STEP = 1 / 60;
@@ -21,7 +21,6 @@ const clamp = THREE.MathUtils.clamp;
 
 const canvas = document.querySelector('#stage');
 const announcer = document.querySelector('#announcer');
-const modeButton = document.querySelector('#mode');
 
 main();
 
@@ -97,7 +96,12 @@ async function main() {
   const potato = new THREE.Mesh(potatoGeometry(geoid), new THREE.MeshStandardMaterial({ map: potatoMap, roughness: 0.8 }));
   potato.castShadow = true;
   potato.receiveShadow = true;
-  const marker = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 12), new THREE.MeshBasicMaterial({ color: ACCENT }));
+  // 감자 위에선 이 주황 점이 커서 대신: 늘 온전한 점으로 보이게 깊이 검사 없이 맨 위에, 포스터의 주황과 같은 색으로(톤 매핑 없이)
+  const marker = new THREE.Mesh(
+    new THREE.SphereGeometry(0.028, 16, 12),
+    new THREE.MeshBasicMaterial({ color: ACCENT, toneMapped: false, depthTest: false }),
+  );
+  marker.renderOrder = 1;
   marker.visible = false;
   potato.add(marker);
   const spinGroup = new THREE.Group();
@@ -105,6 +109,12 @@ async function main() {
   const tiltGroup = new THREE.Group();
   tiltGroup.rotation.z = -THREE.MathUtils.degToRad(AXIAL_TILT); // 북극이 오른쪽 위로
   tiltGroup.add(spinGroup);
+  // 자전축: 북극·남극을 꿰뚫고 양쪽으로 조금 나온 가는 막대. 자전은 안 하고 기울기만 따라감
+  const axis = new THREE.Mesh(
+    new THREE.CylinderGeometry(AXIS.radius, AXIS.radius, AXIS.length, 8),
+    new THREE.MeshBasicMaterial({ color: AXIS.color }),
+  );
+  tiltGroup.add(axis);
   const pitchGroup = new THREE.Group();
   pitchGroup.add(tiltGroup);
   const root = new THREE.Group();
@@ -116,7 +126,6 @@ async function main() {
   // ── 상태 ─────────────────────────────────────────────
 
   const spin = { angle: -0.6, velocity: AUTO_SPIN, pitch: PITCH, dragging: false };
-  const morph = { value: 1, velocity: 0, target: 1 }; // 0 둥근 구, 1 감자 (처음부터 감자)
   const pointer = { x: 0, y: 0, inside: false };
   let place = undefined; // 정보 칸에 그려진 곳
   let infoClock = 0;
@@ -137,6 +146,7 @@ async function main() {
 
   // ── 고르기: 삼각형 대신 높이 자료를 따라 광선을 걸어서 표면을 찾음 ──
 
+  const outer = radiusOf(geoid.max) + 0.01; // 감자에서 가장 높은 곳보다 조금 바깥: 이 구 안쪽만 걸음
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const inverse = new THREE.Matrix4();
@@ -148,7 +158,7 @@ async function main() {
     ray.at(t, point);
     const r = point.length();
     const [lat, lon] = latLonOf(point.divideScalar(r));
-    return r - radiusOf(geoid.sample(lat, lon), morph.value);
+    return r - radiusOf(geoid.sample(lat, lon));
   }
 
   function pickPotato(x, y) {
@@ -158,7 +168,7 @@ async function main() {
     inverse.copy(potato.matrixWorld).invert();
     ray.copy(raycaster.ray).applyMatrix4(inverse); // 감자 로컬: 둥근 지구 = 반지름 1
     const b = ray.origin.dot(ray.direction);
-    const disc = b * b - (ray.origin.lengthSq() - 1.25 * 1.25);
+    const disc = b * b - (ray.origin.lengthSq() - outer * outer);
     if (disc < 0) return null;
     const enter = -b - Math.sqrt(disc);
     const exit = -b + Math.sqrt(disc);
@@ -187,7 +197,8 @@ async function main() {
   function updateHover() {
     const hit = pointer.inside && !spin.dragging ? pickPotato(pointer.x, pointer.y) : null;
     marker.visible = !!hit;
-    canvas.style.cursor = spin.dragging ? 'grabbing' : hit ? 'grab' : '';
+    // 커서: 끄는 동안만 손, 감자 위에선 숨기고 주황 점만, 그 밖은 보통 커서
+    canvas.style.cursor = spin.dragging ? 'grabbing' : hit ? 'none' : '';
     if (hit) marker.position.copy(hit.direction).multiplyScalar(hit.local.length() + 0.01);
     // 정보 칸은 1초에 12번까지만 다시 그림 (도는 동안 매 프레임 올리면 무거움)
     if (elapsed - infoClock < 1 / 12 && !!hit === !!place) return;
@@ -252,21 +263,10 @@ async function main() {
     pointer.inside = false;
   });
 
-  function setShape(target) {
-    morph.target = target;
-    modeButton.textContent = korean ? (target ? '둥글게' : '감자로') : target ? 'Round' : 'Potato'; // 누르면 될 모양
-  }
-  modeButton.addEventListener('click', () => setShape(morph.target ? 0 : 1));
-  window.addEventListener('keydown', (event) => {
-    if (event.target instanceof HTMLButtonElement || event.code !== 'Space') return;
-    event.preventDefault();
-    setShape(morph.target ? 0 : 1);
-  });
   window.addEventListener('resize', layout);
 
   // ── 시작 ─────────────────────────────────────────────
 
-  setShape(1);
   layout();
   drawInfo(infoCanvas, null);
   infoTexture.needsUpdate = true;
@@ -280,10 +280,6 @@ async function main() {
     }
     spinGroup.rotation.y = spin.angle;
     pitchGroup.rotation.x = spin.pitch;
-
-    morph.velocity += (MORPH.k * (morph.target - morph.value) - MORPH.c * morph.velocity) * dt;
-    morph.value += morph.velocity * dt;
-    potato.morphTargetInfluences[0] = Math.max(-0.2, morph.value);
   }
 
   // 감자가 늘 돌고 있으니 60fps 로 계속 그림 (120Hz 화면에선 한 프레임씩 건너뜀)

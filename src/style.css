@@ -27,31 +27,6 @@ body {
   touch-action: none;
 }
 
-/* 벽에 붙은 작은 글자 버튼 (둥글게 ↔ 감자로) */
-.controls {
-  position: fixed;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: max(18px, env(safe-area-inset-bottom));
-  display: flex;
-  gap: 18px;
-}
-
-.controls button {
-  padding: 4px 0;
-  border: 0;
-  border-bottom: 1px solid currentColor;
-  background: none;
-  color: var(--ink);
-  font: 500 13px/1.2 inherit;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-}
-
-.controls button:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 4px;
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
