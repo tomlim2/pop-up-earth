@@ -2,7 +2,7 @@
 // 위치 정보 칸은 자주 바뀌니 따로 작은 캔버스로 (포스터 전체를 다시 올리지 않게)
 
 import { formatCoordinates, formatHeight, korean, POSTER } from './geo.js';
-import { rampStops } from './potato.js';
+import { AXIAL_TILT, rampStops } from './potato.js';
 
 export const ACCENT = '#ff4a1c';
 export const INK = '#141414';
@@ -83,6 +83,14 @@ export function drawPoster(geoid) {
   ctx.fill();
   ctx.strokeStyle = 'rgba(20, 20, 20, 0.4)';
   ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 자전축: 감자와 같은 기울기(북극이 오른쪽 위)로 칼선 원을 가로질러 원 밖으로 조금 나가는 선
+  const tilt = (AXIAL_TILT * Math.PI) / 180;
+  const reach = radius + 90;
+  ctx.beginPath();
+  ctx.moveTo(x + Math.sin(tilt) * reach, y - Math.cos(tilt) * reach);
+  ctx.lineTo(x - Math.sin(tilt) * reach, y + Math.cos(tilt) * reach);
   ctx.stroke();
 
   legend(ctx, geoid);

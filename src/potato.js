@@ -6,6 +6,7 @@ import { contours } from 'd3-contour';
 import { geoEquirectangular, geoGraticule, geoPath } from 'd3-geo';
 
 export const EXAGGERATION = 10_000;
+export const AXIAL_TILT = 23.4; // 자전축 기울기 (도). 3D 감자와 포스터에 인쇄된 축 선이 같이 씀
 const EARTH_RADIUS_M = 6_371_000;
 const LON_SEGMENTS = 256;
 const LAT_SEGMENTS = 128;

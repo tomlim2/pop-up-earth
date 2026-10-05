@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { countryAt, korean, loadEarth, loadGeoid, POSTER } from './geo.js';
 import { createInfoCanvas, drawInfo, drawPoster, INFO, OCEAN, SOCKET, ACCENT } from './poster.js';
-import { latLonOf, potatoGeometry, potatoTexture, radiusOf } from './potato.js';
+import { AXIAL_TILT, latLonOf, potatoGeometry, potatoTexture, radiusOf } from './potato.js';
 import './style.css';
 
 // 단위: 포스터 가로 = 1, 세로 = 1.4. 포스터는 벽(z<0) 앞 z=0 에 세워져 있고 카메라는 +z 쪽
@@ -9,7 +9,6 @@ const ASPECT = POSTER.height / POSTER.width;
 const WALL = '#d3cec4';
 const POTATO_RADIUS = 0.215; // 둥근 지구일 때 반지름
 const POP_OUT = 0.3; // 감자가 포스터에서 튀어나온 거리
-const AXIAL_TILT = THREE.MathUtils.degToRad(23.4);
 const AUTO_SPIN = 0.22; // 저절로 도는 빠르기 (rad/s)
 const MAX_FLING = 9; // 끌다 놓을 때 낼 수 있는 가장 빠른 자전 (rad/s)
 const PITCH = 0.12; // 처음 기울기. 위아래로 끌었다 놓으면 천천히 여기로 돌아옴
@@ -104,7 +103,7 @@ async function main() {
   const spinGroup = new THREE.Group();
   spinGroup.add(potato);
   const tiltGroup = new THREE.Group();
-  tiltGroup.rotation.z = -AXIAL_TILT;
+  tiltGroup.rotation.z = -THREE.MathUtils.degToRad(AXIAL_TILT); // 북극이 오른쪽 위로
   tiltGroup.add(spinGroup);
   const pitchGroup = new THREE.Group();
   pitchGroup.add(tiltGroup);
