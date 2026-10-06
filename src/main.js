@@ -11,7 +11,7 @@ const POTATO_RADIUS = 0.215; // 둥근 지구일 때 반지름
 const POP_OUT = 0.3; // 감자가 포스터에서 튀어나온 거리
 const AUTO_SPIN = 0.22; // 저절로 도는 빠르기 (rad/s)
 const MAX_FLING = 9; // 끌다 놓을 때 낼 수 있는 가장 빠른 자전 (rad/s)
-const PITCH = 0.12; // 처음 기울기. 위아래로 끌었다 놓으면 천천히 여기로 돌아옴
+const PITCH = 0.12; // 처음 기울기. 위아래로 끌어 바꾼 기울기는 놓아도 그대로
 const AXIS = { length: 2.7, radius: 0.0035, color: '#2a2824' }; // 자전축 막대 (감자 로컬, 둥근 지구 반지름 = 1)
 
 const FRAME_MS = 1000 / 60; // 60fps 고정 스텝
@@ -276,7 +276,6 @@ async function main() {
     if (!spin.dragging) {
       spin.velocity += (AUTO_SPIN - spin.velocity) * approach(dt, 0.9);
       spin.angle += spin.velocity * dt;
-      spin.pitch += (PITCH - spin.pitch) * approach(dt, 0.6);
     }
     spinGroup.rotation.y = spin.angle;
     pitchGroup.rotation.x = spin.pitch;
