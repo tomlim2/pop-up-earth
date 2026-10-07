@@ -11,8 +11,8 @@ const PAPER = '#f2f2f2';
 const SANS = '"Helvetica Neue", Helvetica, "Apple SD Gothic Neo", "Pretendard", Arial, sans-serif';
 
 const M = 150; // 여백
-export const SOCKET = { x: 1024, y: 1360, radius: 540 }; // 감자가 튀어나온 자리 (포스터 px)
-export const INFO = { top: 2100, height: 300 }; // 위치 정보 칸 (포스터 px)
+export const SOCKET = { x: 1024, y: 1400, radius: 650 }; // 감자가 튀어나온 자리 (포스터 px)
+export const INFO = { top: 2300, height: 300 }; // 위치 정보 칸 (포스터 px)
 const COLUMNS = { name: M, coordinates: 1130, height: 1560 };
 
 const TEXT = korean
@@ -42,15 +42,15 @@ export function drawPoster(geoid) {
 
   // 제목 "Earth." — 마침표는 주황
   ctx.fillStyle = INK;
-  ctx.font = `700 400px ${SANS}`;
+  ctx.font = `700 300px ${SANS}`;
   ctx.textBaseline = 'alphabetic';
-  if ('letterSpacing' in ctx) ctx.letterSpacing = '-14px';
-  ctx.fillText('Earth', M - 18, 520);
-  const end = M - 18 + ctx.measureText('Earth').width;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '-10px';
+  ctx.fillText('Earth', M - 14, 430);
+  const end = M - 14 + ctx.measureText('Earth').width;
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   ctx.fillStyle = ACCENT;
   ctx.beginPath();
-  ctx.arc(end + 52, 486, 34, 0, Math.PI * 2);
+  ctx.arc(end + 40, 404, 26, 0, Math.PI * 2);
   ctx.fill();
 
   // 오른쪽 위 작은 글자
@@ -63,13 +63,13 @@ export function drawPoster(geoid) {
   ctx.font = `500 ${kickerSize}px ${SANS}`;
   TEXT.kicker.forEach((line, i) => {
     ctx.fillStyle = i ? GREY : INK;
-    ctx.fillText(line, COLUMNS.height, 420 + i * 50); // 높이 열과 왼쪽 맞춤, 마지막 줄이 제목 밑선(520)에 맞음
+    ctx.fillText(line, COLUMNS.height, 330 + i * 50); // 높이 열과 왼쪽 맞춤, 마지막 줄이 제목 밑선(430)에 맞음
   });
 
-  hairline(ctx, 640);
+  hairline(ctx, 540);
   ctx.fillStyle = INK;
   ctx.font = `500 52px ${SANS}`;
-  ctx.fillText(TEXT.subtitle, M, 730);
+  ctx.fillText(TEXT.subtitle, M, 625);
 
   // 감자가 튀어나온 동그란 자리: 살짝 꺼진 바닥 + 가는 칼선
   const { x, y, radius } = SOCKET;
@@ -87,13 +87,13 @@ export function drawPoster(geoid) {
   legend(ctx, geoid);
 
   // 아래: 위치 정보 칸 제목, 꼬리말
-  hairline(ctx, 2000);
+  hairline(ctx, 2200);
   ctx.font = `600 30px ${SANS}`;
   ctx.fillStyle = GREY;
   const [nameLabel, coordinatesLabel, heightLabel] = TEXT.labels;
-  spaced(ctx, nameLabel, COLUMNS.name, 2068);
-  spaced(ctx, coordinatesLabel, COLUMNS.coordinates, 2068);
-  spaced(ctx, heightLabel, COLUMNS.height, 2068);
+  spaced(ctx, nameLabel, COLUMNS.name, 2268);
+  spaced(ctx, coordinatesLabel, COLUMNS.coordinates, 2268);
+  spaced(ctx, heightLabel, COLUMNS.height, 2268);
 
   hairline(ctx, 2600);
   ctx.fillStyle = GREY;
@@ -106,7 +106,7 @@ export function drawPoster(geoid) {
 // 지오이드 색 띠: 가장 낮은 곳 ~ 가장 높은 곳
 function legend(ctx, geoid) {
   const left = M;
-  const top = 1918;
+  const top = 2118;
   const width = 360;
   const height = 14;
   const stops = rampStops();
