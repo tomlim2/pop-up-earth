@@ -4,10 +4,10 @@
 import { formatCoordinates, formatHeight, korean, POSTER } from './geo.js';
 import { rampStops } from './potato.js';
 
-export const ACCENT = '#ff4a1c';
+export const ACCENT = '#141414';
 export const INK = '#141414';
-const GREY = '#8c877d';
-const PAPER = '#efece4';
+const GREY = '#666666';
+const PAPER = '#f2f2f2';
 const SANS = '"Helvetica Neue", Helvetica, "Apple SD Gothic Neo", "Pretendard", Arial, sans-serif';
 
 const M = 150; // 여백
@@ -15,17 +15,12 @@ export const SOCKET = { x: 1024, y: 1360, radius: 540 }; // 감자가 튀어나�
 export const INFO = { top: 2100, height: 300 }; // 위치 정보 칸 (포스터 px)
 const COLUMNS = { name: M, coordinates: 1130, height: 1560 };
 
-// 마우스가 없는 기기(폰)에선 '올려서' 대신 '눌러서'
-const touch = matchMedia('(hover: none)').matches;
-
 const TEXT = korean
   ? {
       kicker: ['팝업 포스터', 'GOCO06s 지오이드 ×10,000', 'Natural Earth 1:110m'],
       subtitle: '중력으로 보면, 감자.',
       legend: '지오이드 높이',
       labels: ['위치', '좌표', '지오이드 높이'],
-      hint: touch ? '끌어서 돌리고, 눌러서 읽어요' : '끌어서 돌리고, 올려서 읽어요',
-      empty: touch ? '감자를 눌러 보세요' : '감자 위에 올려 보세요',
       credit: '지오이드 GOCO06s — Kvas 외 (2019), CC BY 4.0 · NASA SVS 〈The Geoid〉(2026)가 쓴 중력장 모델',
     }
   : {
@@ -33,8 +28,6 @@ const TEXT = korean
       subtitle: 'Seen by gravity, a potato.',
       legend: 'Geoid height',
       labels: ['Place', 'Coordinates', 'Geoid height'],
-      hint: touch ? 'Drag to spin · Tap to read' : 'Drag to spin · Hover to read',
-      empty: touch ? 'Tap the potato' : 'Hover the potato',
       credit: 'Geoid: GOCO06s — Kvas et al. (2019), CC BY 4.0 · the gravity model behind NASA SVS “The Geoid” (2026)',
     };
 
@@ -51,32 +44,38 @@ export function drawPoster(geoid) {
   ctx.fillStyle = INK;
   ctx.font = `700 400px ${SANS}`;
   ctx.textBaseline = 'alphabetic';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '-14px';
   ctx.fillText('Earth', M - 18, 520);
   const end = M - 18 + ctx.measureText('Earth').width;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   ctx.fillStyle = ACCENT;
   ctx.beginPath();
   ctx.arc(end + 52, 486, 34, 0, Math.PI * 2);
   ctx.fill();
 
   // 오른쪽 위 작은 글자
-  ctx.textAlign = 'right';
-  ctx.font = `500 34px ${SANS}`;
+  // 오른쪽 여백선을 넘지 않게: 가장 긴 줄 기준으로 글자 크기를 줄여 세 줄을 같은 크기로
+  let kickerSize = 32;
+  ctx.font = `500 ${kickerSize}px ${SANS}`;
+  const kickerRoom = W - M - COLUMNS.height;
+  const kickerWidth = Math.max(...TEXT.kicker.map((line) => ctx.measureText(line).width));
+  if (kickerWidth > kickerRoom) kickerSize = Math.floor((kickerSize * kickerRoom) / kickerWidth);
+  ctx.font = `500 ${kickerSize}px ${SANS}`;
   TEXT.kicker.forEach((line, i) => {
     ctx.fillStyle = i ? GREY : INK;
-    ctx.fillText(line, W - M, 360 + i * 50);
+    ctx.fillText(line, COLUMNS.height, 420 + i * 50); // 높이 열과 왼쪽 맞춤, 마지막 줄이 제목 밑선(520)에 맞음
   });
-  ctx.textAlign = 'left';
 
   hairline(ctx, 640);
   ctx.fillStyle = INK;
-  ctx.font = `500 44px ${SANS}`;
+  ctx.font = `500 52px ${SANS}`;
   ctx.fillText(TEXT.subtitle, M, 730);
 
   // 감자가 튀어나온 동그란 자리: 살짝 꺼진 바닥 + 가는 칼선
   const { x, y, radius } = SOCKET;
   const well = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius);
-  well.addColorStop(0, '#e9e5dc');
-  well.addColorStop(1, '#e4dfd5');
+  well.addColorStop(0, '#ebebeb');
+  well.addColorStop(1, '#e6e6e6');
   ctx.fillStyle = well;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -89,7 +88,7 @@ export function drawPoster(geoid) {
 
   // 아래: 위치 정보 칸 제목, 꼬리말
   hairline(ctx, 2000);
-  ctx.font = `600 28px ${SANS}`;
+  ctx.font = `600 30px ${SANS}`;
   ctx.fillStyle = GREY;
   const [nameLabel, coordinatesLabel, heightLabel] = TEXT.labels;
   spaced(ctx, nameLabel, COLUMNS.name, 2068);
@@ -97,16 +96,10 @@ export function drawPoster(geoid) {
   spaced(ctx, heightLabel, COLUMNS.height, 2068);
 
   hairline(ctx, 2600);
-  ctx.font = `500 32px ${SANS}`;
-  ctx.fillStyle = INK;
-  ctx.fillText(TEXT.hint, M, 2690);
-  ctx.textAlign = 'right';
   ctx.fillStyle = GREY;
-  ctx.fillText('N° 01 — 2026', W - M, 2690);
-  ctx.textAlign = 'left';
   // 자료 출처 (CC BY)
-  ctx.font = `500 24px ${SANS}`;
-  ctx.fillText(TEXT.credit, M, 2752);
+  ctx.font = `500 28px ${SANS}`;
+  ctx.fillText(TEXT.credit, M, 2690);
   return canvas;
 }
 
@@ -129,13 +122,13 @@ function legend(ctx, geoid) {
   ctx.strokeStyle = 'rgba(20, 20, 20, 0.25)';
   ctx.lineWidth = 1.5;
   ctx.strokeRect(left, top, width, height);
-  ctx.font = `500 26px ${SANS}`;
+  ctx.font = `500 30px ${SANS}`;
   ctx.fillStyle = GREY;
-  ctx.fillText(TEXT.legend, left, top - 16);
+  ctx.fillText(TEXT.legend, left, top - 20);
   ctx.fillStyle = INK;
-  ctx.fillText(formatHeight(lowest), left, top + height + 34);
+  ctx.fillText(formatHeight(lowest), left, top + height + 40);
   ctx.textAlign = 'right';
-  ctx.fillText(formatHeight(highest), left + width, top + height + 34);
+  ctx.fillText(formatHeight(highest), left + width, top + height + 40);
   ctx.textAlign = 'left';
 }
 
@@ -144,12 +137,7 @@ export function drawInfo(canvas, place) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.textBaseline = 'alphabetic';
-  if (!place) {
-    ctx.fillStyle = GREY;
-    ctx.font = `500 64px ${SANS}`;
-    ctx.fillText(TEXT.empty, COLUMNS.name, 140);
-    return;
-  }
+  if (!place) return;
   ctx.fillStyle = INK;
   let size = 88;
   ctx.font = `700 ${size}px ${SANS}`;
@@ -160,16 +148,11 @@ export function drawInfo(canvas, place) {
     ctx.font = `700 ${size}px ${SANS}`;
   }
   ctx.fillText(place.name, COLUMNS.name, 140);
-  ctx.font = `500 40px ${SANS}`;
-  ctx.fillText(formatCoordinates(place.lat, place.lon), COLUMNS.coordinates, 128);
-  ctx.font = `700 52px ${SANS}`;
-  ctx.fillStyle = place.height >= 0 ? ACCENT : '#4f6f93';
-  ctx.fillText(formatHeight(place.height), COLUMNS.height, 132);
-  // 지금 가리키는 곳 표시: 주황 점
-  ctx.fillStyle = ACCENT;
-  ctx.beginPath();
-  ctx.arc(COLUMNS.name - 52, 108, 14, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.font = `500 44px ${SANS}`;
+  ctx.fillText(formatCoordinates(place.lat, place.lon), COLUMNS.coordinates, 140);
+  ctx.font = `700 56px ${SANS}`;
+  ctx.fillStyle = place.height >= 0 ? '#ff4a1c' : '#4f6f93';
+  ctx.fillText(formatHeight(place.height), COLUMNS.height, 140);
 }
 
 export function createInfoCanvas() {

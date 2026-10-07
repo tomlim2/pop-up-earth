@@ -1,18 +1,18 @@
 import * as THREE from 'three';
-import { countryAt, loadEarth, loadGeoid, POSTER } from './geo.js';
+import { countryAt, loadEarth, loadGeoid, korean, POSTER } from './geo.js';
 import { createInfoCanvas, drawInfo, drawPoster, INFO, OCEAN, SOCKET, ACCENT } from './poster.js';
 import { AXIAL_TILT, latLonOf, potatoGeometry, potatoTexture, radiusOf } from './potato.js';
 import './style.css';
 
 // 단위: 포스터 가로 = 1, 세로 = 1.4. 포스터는 벽(z<0) 앞 z=0 에 세워져 있고 카메라는 +z 쪽
 const ASPECT = POSTER.height / POSTER.width;
-const WALL = '#d3cec4';
+const WALL = '#cfcfcf';
 const POTATO_RADIUS = 0.215; // 둥근 지구일 때 반지름
 const POP_OUT = 0.3; // 감자가 포스터에서 튀어나온 거리
 const AUTO_SPIN = 0.22; // 저절로 도는 빠르기 (rad/s)
 const MAX_FLING = 9; // 끌다 놓을 때 낼 수 있는 가장 빠른 자전 (rad/s)
 const PITCH = 0.12; // 처음 기울기. 위아래로 끌어 바꾼 기울기는 놓아도 그대로
-const AXIS = { length: 2.7, radius: 0.0035, color: '#2a2824' }; // 자전축 막대 (감자 로컬, 둥근 지구 반지름 = 1)
+const AXIS = { length: 2.7, radius: 0.0035, color: '#222222' }; // 자전축 막대 (감자 로컬, 둥근 지구 반지름 = 1)
 
 const FRAME_MS = 1000 / 60; // 60fps 고정 스텝
 const STEP = 1 / 60;
@@ -21,6 +21,14 @@ const clamp = THREE.MathUtils.clamp;
 
 const canvas = document.querySelector('#stage');
 const announcer = document.querySelector('#announcer');
+
+// 정적 HTML 은 한글이라, 영어로 들어오면 문서 언어·설명·접근성 문구를 영어로
+if (!korean) {
+  document.documentElement.lang = 'en';
+  document.querySelector('meta[name="description"]').content =
+    'A minimal pop-up poster: the Earth as a potato, inflated 10,000× from the same gravity model (GOCO06s) as NASA SVS "The Geoid", spinning out of the page';
+  canvas.setAttribute('aria-label', 'Poster with a potato-shaped Earth, inflated by its geoid, spinning');
+}
 
 main();
 
@@ -96,7 +104,7 @@ async function main() {
   const potato = new THREE.Mesh(potatoGeometry(geoid), new THREE.MeshStandardMaterial({ map: potatoMap, roughness: 0.8 }));
   potato.castShadow = true;
   potato.receiveShadow = true;
-  // 감자 위에선 이 주황 점이 커서 대신: 늘 온전한 점으로 보이게 깊이 검사 없이 맨 위에, 포스터의 주황과 같은 색으로(톤 매핑 없이)
+  // 감자 위에선 이 점이 커서 대신: 늘 온전한 점으로 보이게 깊이 검사 없이 맨 위에, 포스터의 검정과 같은 색으로(톤 매핑 없이)
   const marker = new THREE.Mesh(
     new THREE.SphereGeometry(0.028, 16, 12),
     new THREE.MeshBasicMaterial({ color: ACCENT, toneMapped: false, depthTest: false }),
@@ -197,7 +205,7 @@ async function main() {
   function updateHover() {
     const hit = pointer.inside && !spin.dragging ? pickPotato(pointer.x, pointer.y) : null;
     marker.visible = !!hit;
-    // 커서: 끄는 동안만 손, 감자 위에선 숨기고 주황 점만, 그 밖은 보통 커서
+    // 커서: 끄는 동안만 손, 감자 위에선 숨기고 점만, 그 밖은 보통 커서
     canvas.style.cursor = spin.dragging ? 'grabbing' : hit ? 'none' : '';
     if (hit) marker.position.copy(hit.direction).multiplyScalar(hit.local.length() + 0.01);
     // 정보 칸은 1초에 12번까지만 다시 그림 (도는 동안 매 프레임 올리면 무거움)
